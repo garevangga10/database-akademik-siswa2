@@ -1,0 +1,7 @@
+Nama,Nilai
+Tegar,90
+Andi,70
+Siti,85
+Budi,60
+Rina,95
+Dewi,73
