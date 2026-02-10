@@ -56,10 +56,11 @@ st.markdown("""
 # =========================
 # KONEKSI GOOGLE SHEETS (SECRETS)
 # =========================
-SCOPE = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
-]
+import gspread
+from google.oauth2.service_account import Credentials
+import streamlit as st
+
+SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 
 creds = Credentials.from_service_account_info(
     st.secrets["gcp_service_account"],
@@ -67,11 +68,7 @@ creds = Credentials.from_service_account_info(
 )
 
 client = gspread.authorize(creds)
-
-# GANTI DENGAN SHEET ID KAMU
-SHEET_ID = "1-vRO7H8T2yZjlObE-t-BApmaYrreR6qc_LvrC2smeWg"
-
-sheet = client.open_by_key(SHEET_ID).sheet1
+sheet = client.open_by_key("SHEET_ID_KAMU").sheet1
 
 # =========================
 # FUNGSI DATA
@@ -229,5 +226,6 @@ elif menu == "📊 Grafik":
 # =========================
 st.markdown("---")
 st.caption("✨ Database Akademik Siswa MAS Al-Hamidiyah | Streamlit + Google Sheets")
+
 
 
