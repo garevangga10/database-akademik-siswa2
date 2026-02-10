@@ -69,7 +69,7 @@ creds = Credentials.from_service_account_info(
 client = gspread.authorize(creds)
 
 # GANTI DENGAN SHEET ID KAMU
-SHEET_ID = "PASTE_SHEET_ID_KAMU_DI_SINI"
+SHEET_ID = "1-vRO7H8T2yZjlObE-t-BApmaYrreR6qc_LvrC2smeWg"
 
 sheet = client.open_by_key(SHEET_ID).sheet1
 
@@ -229,3 +229,4 @@ elif menu == "📊 Grafik":
 # =========================
 st.markdown("---")
 st.caption("✨ Database Akademik Siswa MAS Al-Hamidiyah | Streamlit + Google Sheets")
+
