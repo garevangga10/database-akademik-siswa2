@@ -121,3 +121,4 @@ with g2:
 # CATATAN
 # =========================
 st.info("📌 Status kelulusan ditentukan berdasarkan nilai ≥ 75")
+
