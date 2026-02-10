@@ -230,3 +230,4 @@ elif menu == "📊 Grafik":
 st.markdown("---")
 st.caption("✨ Database Akademik Siswa MAS Al-Hamidiyah | Streamlit + Google Sheets")
 
+
