@@ -1,4 +1,16 @@
 import streamlit as st
+from supabase import create_client
+
+st.write("Secrets loaded:", st.secrets.keys())
+
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_ANON_KEY"]
+
+supabase = create_client(url, key)
+
+st.success("✅ Supabase berhasil terkoneksi!")
+
+import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
@@ -183,3 +195,4 @@ with g2:
     st.pyplot(fig2)
 
 st.markdown("<p class='blink'>⚡ Sistem aktif | Demo Online ⚡</p>",unsafe_allow_html=True)
+
