@@ -4,14 +4,14 @@ import pandas as pd
 import plotly.express as px
 import time
 
-# =========================
-# 🔐 CONFIG PAGE
-# =========================
+# =========================================
+# CONFIG PAGE
+# =========================================
 st.set_page_config(page_title="AHA Academic System", layout="wide")
 
-# =========================
-# 🌊 SUPER PREMIUM UI STYLE
-# =========================
+# =========================================
+# PREMIUM UI STYLE
+# =========================================
 st.markdown("""
 <style>
 
@@ -39,25 +39,12 @@ st.markdown("""
     background-size: 300%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: slideMove 12s linear infinite, shimmer 4s infinite;
-}
-
-@keyframes slideMove {
-    0% { transform: translateX(-40%); }
-    100% { transform: translateX(40%); }
+    animation: shimmer 6s linear infinite;
 }
 
 @keyframes shimmer {
     0% {background-position: 0%;}
     100% {background-position: 200%;}
-}
-
-.glass-card {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 0 40px rgba(0,255,255,0.15);
 }
 
 .metric-card {
@@ -71,10 +58,6 @@ st.markdown("""
 .metric-card h2 {
     color: #22d3ee;
     font-size: 32px;
-}
-
-.metric-card p {
-    font-size: 18px;
 }
 
 div.stButton > button {
@@ -92,16 +75,20 @@ div.stButton > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# 🔌 CONNECT SUPABASE
-# =========================
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_ANON_KEY"]
-supabase = create_client(url, key)
+# =========================================
+# CONNECT SUPABASE (STABLE)
+# =========================================
+try:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_ANON_KEY"]
+    supabase = create_client(url, key)
+    CONNECTED = True
+except:
+    CONNECTED = False
 
-# =========================
-# 🔐 LOGIN SYSTEM
-# =========================
+# =========================================
+# LOGIN SYSTEM
+# =========================================
 if "login" not in st.session_state:
     st.session_state.login = False
 
@@ -119,107 +106,132 @@ if not st.session_state.login:
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
-
         if username == "admin" and password == "admin123":
             st.session_state.login = True
             st.session_state.role = "admin"
             st.rerun()
-
         elif username == "siswa" and password == "siswa123":
             st.session_state.login = True
             st.session_state.role = "siswa"
             st.rerun()
-
         else:
             st.error("Username / Password salah")
 
-else:
+    st.stop()
 
-    role = st.session_state.role
+# =========================================
+# LOAD DATA (SAFE VERSION)
+# =========================================
+def load_data():
+    if not CONNECTED:
+        return pd.DataFrame()
 
-    # =========================
-    # 📊 LOAD DATA
-    # =========================
-    def load_data():
-        try:
-            res = supabase.table("siswa").select("*").execute()
-            return pd.DataFrame(res.data)
-        except:
+    try:
+        res = supabase.table("siswa").select("*").execute()
+        data = res.data
+        if data:
+            return pd.DataFrame(data)
+        else:
             return pd.DataFrame()
+    except:
+        return pd.DataFrame()
 
-    df = load_data()
+df = load_data()
 
-    if not df.empty:
-        df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
+# =========================================
+# MAIN DASHBOARD
+# =========================================
+st.markdown("""
+<div class="welcome-container">
+    <div class="welcome-text">📊 DATABASE AKADEMIK SISWA</div>
+</div>
+""", unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="welcome-container">
-        <div class="welcome-text">📊 DATABASE AKADEMIK SISWA</div>
-    </div>
-    """, unsafe_allow_html=True)
+if not CONNECTED:
+    st.error("Supabase tidak terhubung.")
+    st.stop()
 
-    if not df.empty:
+if df.empty:
+    st.warning("Database kosong atau gagal dimuat.")
+    st.stop()
 
-        col1, col2, col3 = st.columns(3)
+# Pastikan kolom ada
+if "nilai" in df.columns:
+    df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
+else:
+    st.error("Kolom 'nilai' tidak ditemukan di database.")
+    st.stop()
 
-        with col1:
-            st.markdown(f"<div class='metric-card'><h2>{len(df)}</h2><p>Total</p></div>", unsafe_allow_html=True)
+# =========================================
+# METRICS
+# =========================================
+col1, col2, col3 = st.columns(3)
 
-        with col2:
-            st.markdown(f"<div class='metric-card'><h2>{(df['status']=='Lulus').sum()}</h2><p>Lulus</p></div>", unsafe_allow_html=True)
+with col1:
+    st.markdown(f"<div class='metric-card'><h2>{len(df)}</h2><p>Total</p></div>", unsafe_allow_html=True)
 
-        with col3:
-            st.markdown(f"<div class='metric-card'><h2>{(df['status']=='Tidak Lulus').sum()}</h2><p>Tidak Lulus</p></div>", unsafe_allow_html=True)
+with col2:
+    st.markdown(f"<div class='metric-card'><h2>{(df['status']=='Lulus').sum()}</h2><p>Lulus</p></div>", unsafe_allow_html=True)
 
-        st.divider()
+with col3:
+    st.markdown(f"<div class='metric-card'><h2>{(df['status']=='Tidak Lulus').sum()}</h2><p>Tidak Lulus</p></div>", unsafe_allow_html=True)
 
-        st.subheader("📋 Data Siswa")
-        st.dataframe(df, use_container_width=True)
+st.divider()
 
-        st.divider()
+# =========================================
+# TABLE
+# =========================================
+st.subheader("📋 Data Siswa")
+st.dataframe(df, use_container_width=True)
 
-        # =========================
-        # ADMIN ONLY
-        # =========================
-        if role == "admin":
+st.divider()
 
-            st.subheader("➕ Tambah Data")
+# =========================================
+# ADMIN PANEL
+# =========================================
+if st.session_state.role == "admin":
 
-            nama = st.text_input("Nama")
-            nilai = st.number_input("Nilai", 0, 100, 0)
+    st.subheader("➕ Tambah Data")
 
-            if st.button("Simpan"):
-                supabase.table("siswa").insert({"nama": nama, "nilai": nilai}).execute()
-                st.success("Data ditambahkan")
-                time.sleep(1)
-                st.rerun()
+    nama = st.text_input("Nama")
+    nilai = st.number_input("Nilai", 0, 100, 0)
 
-            st.divider()
-
-            st.subheader("🗑️ Hapus Data")
-
-            pilih = st.selectbox("Pilih ID", df["id"])
-
-            if st.button("Hapus"):
-                supabase.table("siswa").delete().eq("id", pilih).execute()
-                st.warning("Data dihapus")
-                time.sleep(1)
-                st.rerun()
-
-        # =========================
-        # 📊 INTERACTIVE GRAPH
-        # =========================
-        st.divider()
-        st.subheader("📈 Grafik Interaktif")
-
-        fig = px.bar(df, x="nama", y="nilai", color="status", text="nilai")
-        fig.update_layout(template="plotly_dark")
-        st.plotly_chart(fig, use_container_width=True)
-
-    else:
-        st.warning("Belum ada data di database.")
+    if st.button("Simpan"):
+        try:
+            supabase.table("siswa").insert({"nama": nama, "nilai": nilai}).execute()
+            st.success("Data ditambahkan")
+            time.sleep(1)
+            st.rerun()
+        except:
+            st.error("Gagal menambahkan data.")
 
     st.divider()
-    if st.button("Logout"):
-        st.session_state.login = False
-        st.rerun()
+
+    st.subheader("🗑️ Hapus Data")
+
+    pilih = st.selectbox("Pilih ID", df["id"])
+
+    if st.button("Hapus"):
+        try:
+            supabase.table("siswa").delete().eq("id", pilih).execute()
+            st.warning("Data dihapus")
+            time.sleep(1)
+            st.rerun()
+        except:
+            st.error("Gagal menghapus data.")
+
+# =========================================
+# INTERACTIVE CHART
+# =========================================
+st.divider()
+st.subheader("📈 Grafik Interaktif")
+
+fig = px.bar(df, x="nama", y="nilai", color="status", text="nilai")
+fig.update_layout(template="plotly_dark")
+st.plotly_chart(fig, use_container_width=True)
+
+st.divider()
+
+if st.button("Logout"):
+    st.session_state.login = False
+    st.rerun()
