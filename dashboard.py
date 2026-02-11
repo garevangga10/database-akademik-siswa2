@@ -1,88 +1,41 @@
 import streamlit as st
+from supabase import create_client
 import pandas as pd
 import plotly.express as px
-from supabase import create_client
 import time
 
-# ===================================
-# PAGE CONFIG
-# ===================================
-st.set_page_config(
-    page_title="Database Akademik Siswa",
-    layout="wide",
-    page_icon="🎓"
-)
+# =========================
+# 🔐 CONFIG PAGE
+# =========================
+st.set_page_config(page_title="AHA Academic System", layout="wide")
 
-# ===================================
-# SUPER UI STYLE
-# ===================================
+# =========================
+# 🌊 SUPER PREMIUM UI STYLE
+# =========================
 st.markdown("""
 <style>
 
-/* ===========================
-🌊 ANIMATED GRADIENT BACKGROUND
-=========================== */
 .stApp {
-    background: linear-gradient(-45deg, #020617, #0f172a, #0a0f2c, #111827);
+    background: linear-gradient(-45deg, #020617, #0f172a, #111827, #0a0f2c);
     background-size: 400% 400%;
     animation: gradientMove 20s ease infinite;
 }
 
 @keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
 }
 
-/* ===========================
-🌀 GLASS PARALLAX CONTAINER
-=========================== */
-.glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
-    transition: 0.4s ease;
-}
-
-.glass-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 60px rgba(0, 255, 255, 0.25);
-}
-
-/* ===========================
-✨ CURSOR GLOW
-=========================== */
-.cursor-glow {
-    position: fixed;
-    width: 200px;
-    height: 200px;
-    pointer-events: none;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(34,211,238,0.4) 0%, rgba(0,0,0,0) 70%);
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-}
-
-/* ===========================
-🚀 WELCOME TEXT
-=========================== */
 .welcome-container {
-    position: relative;
-    height: 80px;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    text-align: center;
+    margin-top: 20px;
 }
 
 .welcome-text {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 900;
-    letter-spacing: 4px;
-    white-space: nowrap;
-    background: linear-gradient(90deg, #22d3ee, #3b82f6, #a855f7, #22d3ee);
+    background: linear-gradient(90deg,#22d3ee,#3b82f6,#a855f7,#22d3ee);
     background-size: 300%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -90,40 +43,40 @@ st.markdown("""
 }
 
 @keyframes slideMove {
-    0% { transform: translateX(-60%); }
-    100% { transform: translateX(60%); }
+    0% { transform: translateX(-40%); }
+    100% { transform: translateX(40%); }
 }
 
 @keyframes shimmer {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 100% 50%; }
+    0% {background-position: 0%;}
+    100% {background-position: 200%;}
 }
 
-/* ===========================
-✨ SPARKLE
-=========================== */
-.sparkle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: white;
-    border-radius: 50%;
-    animation: sparkleAnim 3s infinite ease-in-out;
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 0 40px rgba(0,255,255,0.15);
 }
 
-.sparkle:nth-child(2) { top: 10px; left: 20%; animation-delay: 0s; }
-.sparkle:nth-child(3) { top: 50px; left: 50%; animation-delay: 1s; }
-.sparkle:nth-child(4) { top: 20px; left: 80%; animation-delay: 2s; }
-
-@keyframes sparkleAnim {
-    0% { opacity: 0; transform: scale(0.5); }
-    50% { opacity: 1; transform: scale(1.5); }
-    100% { opacity: 0; transform: scale(0.5); }
+.metric-card {
+    background: rgba(255,255,255,0.05);
+    padding: 25px;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0,255,255,0.2);
 }
 
-/* ===========================
-💎 BUTTON STYLE
-=========================== */
+.metric-card h2 {
+    color: #22d3ee;
+    font-size: 32px;
+}
+
+.metric-card p {
+    font-size: 18px;
+}
+
 div.stButton > button {
     background: linear-gradient(90deg,#3b82f6,#22d3ee);
     border-radius: 12px;
@@ -139,320 +92,134 @@ div.stButton > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-/* ===== WELCOME CONTAINER ===== */
-.welcome-container {
-    position: relative;
-    width: 100%;
-    height: 80px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+# =========================
+# 🔌 CONNECT SUPABASE
+# =========================
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_ANON_KEY"]
+supabase = create_client(url, key)
 
-/* ===== MOVING TEXT ===== */
-.welcome-text {
-    position: absolute;
-    font-size: 28px;
-    font-weight: 900;
-    letter-spacing: 4px;
-    white-space: nowrap;
-    background: linear-gradient(90deg, #22d3ee, #3b82f6, #a855f7, #22d3ee);
-    background-size: 300%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: 
-        slideMove 12s linear infinite,
-        shimmer 4s ease-in-out infinite,
-        glowPulse 2s ease-in-out infinite alternate;
-}
-
-/* ===== SLIDE LEFT TO RIGHT ===== */
-@keyframes slideMove {
-    0% { transform: translateX(-60%); }
-    100% { transform: translateX(60%); }
-}
-
-/* ===== SHIMMER EFFECT ===== */
-@keyframes shimmer {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 100% 50%; }
-}
-
-/* ===== GLOW EFFECT ===== */
-@keyframes glowPulse {
-    from { text-shadow: 0 0 10px #22d3ee; }
-    to { text-shadow: 0 0 35px #3b82f6; }
-}
-
-/* ===== SPARKLE ===== */
-.sparkle {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: white;
-    border-radius: 50%;
-    animation: sparkleAnim 3s infinite ease-in-out;
-    opacity: 0.8;
-}
-
-.sparkle:nth-child(1) { top: 10px; left: 20%; animation-delay: 0s; }
-.sparkle:nth-child(2) { top: 50px; left: 40%; animation-delay: 1s; }
-.sparkle:nth-child(3) { top: 20px; left: 70%; animation-delay: 2s; }
-
-@keyframes sparkleAnim {
-    0% { transform: scale(0.5); opacity: 0; }
-    50% { transform: scale(1.5); opacity: 1; }
-    100% { transform: scale(0.5); opacity: 0; }
-}
-
-
-/* ANIMATED BACKGROUND */
-body {
-    background: linear-gradient(-45deg, #0f172a, #1e293b, #0ea5e9, #1e293b);
-    background-size: 400% 400%;
-    animation: gradientMove 15s ease infinite;
-}
-
-@keyframes gradientMove {
-    0% {background-position: 0% 50%;}
-    50% {background-position: 100% 50%;}
-    100% {background-position: 0% 50%;}
-}
-
-/* GLASS EFFECT */
-.glass {
-    backdrop-filter: blur(20px);
-    background: rgba(255,255,255,0.07);
-    padding: 30px;
-    border-radius: 25px;
-    box-shadow: 0 0 40px rgba(0,255,255,0.2);
-}
-
-/* TITLE */
-.main-title {
-    font-size: 45px;
-    font-weight: 900;
-    text-align: center;
-    color: #38bdf8;
-    animation: glow 2s infinite alternate;
-}
-
-@keyframes glow {
-    from {text-shadow: 0 0 10px #38bdf8;}
-    to {text-shadow: 0 0 30px #22d3ee;}
-}
-
-/* BUTTON */
-.stButton>button {
-    background: linear-gradient(90deg,#3b82f6,#06b6d4);
-    color:white;
-    border-radius:15px;
-    padding:10px 25px;
-    border:none;
-    font-weight:600;
-    transition:0.3s;
-}
-
-.stButton>button:hover {
-    transform:scale(1.05);
-    box-shadow:0 0 20px #38bdf8;
-}
-
-/* CARD */
-.card {
-    backdrop-filter: blur(15px);
-    background: rgba(255,255,255,0.08);
-    padding:25px;
-    border-radius:20px;
-    text-align:center;
-    box-shadow: 0 0 30px rgba(0,255,255,0.15);
-    transition:0.3s;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 50px rgba(0,255,255,0.4);
-}
-
-/* LOGIN BACKGROUND */
-.login-bg {
-    background: radial-gradient(circle at center,#0ea5e9 0%,#0f172a 70%);
-    padding:50px;
-    border-radius:30px;
-    box-shadow:0 0 60px rgba(0,255,255,0.4);
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ===================================
-# SUPABASE CONNECTION
-# ===================================
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# ===================================
-# LOGIN SYSTEM
-# ===================================
-users = {
-    "admin": {"password": "admin123", "role": "admin"},
-    "siswa": {"password": "siswa123", "role": "siswa"}
-}
-
+# =========================
+# 🔐 LOGIN SYSTEM
+# =========================
 if "login" not in st.session_state:
     st.session_state.login = False
-    
-st.markdown("""
-<div class="welcome-container">
-    <div class="welcome-text">✨ WELCOME TO AHA WEBSITE ✨</div>
-    <div class="sparkle"></div>
-    <div class="sparkle"></div>
-    <div class="sparkle"></div>
-</div>
-""", unsafe_allow_html=True)
 
 if not st.session_state.login:
-    st.markdown("<div class='login-bg'>", unsafe_allow_html=True)
+
     st.markdown("""
-<div class="welcome-container">
-    <div class="welcome-text">✨ WELCOME TO AHA WEBSITE ✨</div>
-    <div class="sparkle"></div>
-    <div class="sparkle"></div>
-    <div class="sparkle"></div>
-</div>
-""", unsafe_allow_html=True)
-    st.markdown("<div class='main-title'>🔐 LOGIN DATABASE AKADEMIK</div>", unsafe_allow_html=True)
+    <div class="welcome-container">
+        <div class="welcome-text">✨ WELCOME TO AHA WEBSITE ✨</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("## 🔐 LOGIN DATABASE AKADEMIK")
 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    import base64
+    if st.button("Login"):
 
-sound_file = open("https://www.soundjay.com/buttons/sounds/button-3.mp3", "rb")
-sound_bytes = sound_file.read()
-sound_base64 = base64.b64encode(sound_bytes).decode()
+        if username == "admin" and password == "admin123":
+            st.session_state.login = True
+            st.session_state.role = "admin"
+            st.rerun()
 
-audio_html = f"""
-<audio id="loginSound" src="data:audio/mp3;base64,{sound_base64}"></audio>
-<script>
-function playSound() {{
-    document.getElementById("loginSound").play();
-}}
-</script>
-"""
-
-st.markdown(audio_html, unsafe_allow_html=True)
-
-    if st.button("Login", on_click=None):
-    st.markdown("<script>playSound()</script>", unsafe_allow_html=True)
+        elif username == "siswa" and password == "siswa123":
+            st.session_state.login = True
+            st.session_state.role = "siswa"
+            st.rerun()
 
         else:
-            st.error("Login salah")
+            st.error("Username / Password salah")
 
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()
+else:
 
-# ===================================
-# LOAD DATA
-# ===================================
-def load_data():
-    res = supabase.table("database-akademik-siswa").select("*").execute()
-    return pd.DataFrame(res.data)
+    role = st.session_state.role
 
-def insert_data(nama, nilai):
-    supabase.table("database-akademik-siswa").insert({
-        "nama": nama,
-        "nilai": nilai
-    }).execute()
+    # =========================
+    # 📊 LOAD DATA
+    # =========================
+    def load_data():
+        try:
+            res = supabase.table("siswa").select("*").execute()
+            return pd.DataFrame(res.data)
+        except:
+            return pd.DataFrame()
 
-def delete_data(id):
-    supabase.table("database-akademik-siswa").delete().eq("id", id).execute()
+    df = load_data()
 
-df = load_data()
+    if not df.empty:
+        df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
 
-df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
+    st.markdown("""
+    <div class="welcome-container">
+        <div class="welcome-text">📊 DATABASE AKADEMIK SISWA</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ===================================
-# HEADER
-# ===================================
-st.markdown("<div class='main-title'>🎓 DATABASE AKADEMIK SISWA</div>", unsafe_allow_html=True)
-st.divider()
+    if not df.empty:
 
-# ===================================
-# METRICS
-# ===================================
-c1,c2,c3 = st.columns(3)
+        col1, col2, col3 = st.columns(3)
 
-c1.markdown(f"<div class='card'><h3>Total</h3><h1>{len(df)}</h1></div>", unsafe_allow_html=True)
-c2.markdown(f"<div class='card'><h3>Lulus</h3><h1>{(df['status']=='Lulus').sum()}</h1></div>", unsafe_allow_html=True)
-c3.markdown(f"<div class='card'><h3>Tidak Lulus</h3><h1>{(df['status']=='Tidak Lulus').sum()}</h1></div>", unsafe_allow_html=True)
+        with col1:
+            st.markdown(f"<div class='metric-card'><h2>{len(df)}</h2><p>Total</p></div>", unsafe_allow_html=True)
 
-st.divider()
+        with col2:
+            st.markdown(f"<div class='metric-card'><h2>{(df['status']=='Lulus').sum()}</h2><p>Lulus</p></div>", unsafe_allow_html=True)
 
-# ===================================
-# DATA TABLE
-# ===================================
-st.subheader("📋 Data Siswa")
-st.dataframe(df, use_container_width=True)
+        with col3:
+            st.markdown(f"<div class='metric-card'><h2>{(df['status']=='Tidak Lulus').sum()}</h2><p>Tidak Lulus</p></div>", unsafe_allow_html=True)
 
-# ===================================
-# ADMIN PANEL
-# ===================================
-if st.session_state.role == "admin":
+        st.divider()
+
+        st.subheader("📋 Data Siswa")
+        st.dataframe(df, use_container_width=True)
+
+        st.divider()
+
+        # =========================
+        # ADMIN ONLY
+        # =========================
+        if role == "admin":
+
+            st.subheader("➕ Tambah Data")
+
+            nama = st.text_input("Nama")
+            nilai = st.number_input("Nilai", 0, 100, 0)
+
+            if st.button("Simpan"):
+                supabase.table("siswa").insert({"nama": nama, "nilai": nilai}).execute()
+                st.success("Data ditambahkan")
+                time.sleep(1)
+                st.rerun()
+
+            st.divider()
+
+            st.subheader("🗑️ Hapus Data")
+
+            pilih = st.selectbox("Pilih ID", df["id"])
+
+            if st.button("Hapus"):
+                supabase.table("siswa").delete().eq("id", pilih).execute()
+                st.warning("Data dihapus")
+                time.sleep(1)
+                st.rerun()
+
+        # =========================
+        # 📊 INTERACTIVE GRAPH
+        # =========================
+        st.divider()
+        st.subheader("📈 Grafik Interaktif")
+
+        fig = px.bar(df, x="nama", y="nilai", color="status", text="nilai")
+        fig.update_layout(template="plotly_dark")
+        st.plotly_chart(fig, use_container_width=True)
+
+    else:
+        st.warning("Belum ada data di database.")
+
     st.divider()
-    st.subheader("⚙️ Panel Admin")
-
-    nama = st.text_input("Nama Baru")
-    nilai = st.number_input("Nilai Baru", 0, 100, 0)
-
-    if st.button("Tambah Data"):
-        insert_data(nama, nilai)
-        st.success("Data ditambahkan 🚀")
-        time.sleep(1)
+    if st.button("Logout"):
+        st.session_state.login = False
         st.rerun()
-
-    id_hapus = st.number_input("ID Hapus", 0, 1000, 0)
-
-    if st.button("Hapus Data"):
-        delete_data(id_hapus)
-        st.warning("Data dihapus")
-        time.sleep(1)
-        st.rerun()
-
-# ===================================
-# INTERACTIVE CHART
-# ===================================
-st.divider()
-st.subheader("📊 Grafik Interaktif")
-
-fig = px.bar(
-    df,
-    x="nama",
-    y="nilai",
-    color="status",
-    template="plotly_dark",
-    title="Grafik Nilai Siswa"
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-# ===================================
-# AUTO REFRESH
-# ===================================
-st.caption("Auto refresh setiap 30 detik")
-time.sleep(30)
-st.rerun()
-
-st.markdown("""
-<div class="cursor-glow" id="cursorGlow"></div>
-<script>
-const glow = document.getElementById('cursorGlow');
-document.addEventListener('mousemove', e => {
-    glow.style.left = e.clientX + 'px';
-    glow.style.top = e.clientY + 'px';
-});
-</script>
-""", unsafe_allow_html=True)
-
