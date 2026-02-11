@@ -19,6 +19,74 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+/* ===== WELCOME CONTAINER ===== */
+.welcome-container {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== MOVING TEXT ===== */
+.welcome-text {
+    position: absolute;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    white-space: nowrap;
+    background: linear-gradient(90deg, #22d3ee, #3b82f6, #a855f7, #22d3ee);
+    background-size: 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: 
+        slideMove 12s linear infinite,
+        shimmer 4s ease-in-out infinite,
+        glowPulse 2s ease-in-out infinite alternate;
+}
+
+/* ===== SLIDE LEFT TO RIGHT ===== */
+@keyframes slideMove {
+    0% { transform: translateX(-60%); }
+    100% { transform: translateX(60%); }
+}
+
+/* ===== SHIMMER EFFECT ===== */
+@keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+/* ===== GLOW EFFECT ===== */
+@keyframes glowPulse {
+    from { text-shadow: 0 0 10px #22d3ee; }
+    to { text-shadow: 0 0 35px #3b82f6; }
+}
+
+/* ===== SPARKLE ===== */
+.sparkle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    animation: sparkleAnim 3s infinite ease-in-out;
+    opacity: 0.8;
+}
+
+.sparkle:nth-child(1) { top: 10px; left: 20%; animation-delay: 0s; }
+.sparkle:nth-child(2) { top: 50px; left: 40%; animation-delay: 1s; }
+.sparkle:nth-child(3) { top: 20px; left: 70%; animation-delay: 2s; }
+
+@keyframes sparkleAnim {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(0.5); opacity: 0; }
+}
+
+
 /* ANIMATED BACKGROUND */
 body {
     background: linear-gradient(-45deg, #0f172a, #1e293b, #0ea5e9, #1e293b);
@@ -118,6 +186,14 @@ if "login" not in st.session_state:
 
 if not st.session_state.login:
     st.markdown("<div class='login-bg'>", unsafe_allow_html=True)
+    st.markdown("""
+<div class="welcome-container">
+    <div class="welcome-text">✨ WELCOME TO AHA WEBSITE ✨</div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+</div>
+""", unsafe_allow_html=True)
     st.markdown("<div class='main-title'>🔐 LOGIN DATABASE AKADEMIK</div>", unsafe_allow_html=True)
 
     username = st.text_input("Username")
@@ -226,3 +302,4 @@ st.plotly_chart(fig, use_container_width=True)
 st.caption("Auto refresh setiap 30 detik")
 time.sleep(30)
 st.rerun()
+
