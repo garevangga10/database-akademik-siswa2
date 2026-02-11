@@ -19,6 +19,126 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+/* ===========================
+🌊 ANIMATED GRADIENT BACKGROUND
+=========================== */
+.stApp {
+    background: linear-gradient(-45deg, #020617, #0f172a, #0a0f2c, #111827);
+    background-size: 400% 400%;
+    animation: gradientMove 20s ease infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ===========================
+🌀 GLASS PARALLAX CONTAINER
+=========================== */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
+    transition: 0.4s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 60px rgba(0, 255, 255, 0.25);
+}
+
+/* ===========================
+✨ CURSOR GLOW
+=========================== */
+.cursor-glow {
+    position: fixed;
+    width: 200px;
+    height: 200px;
+    pointer-events: none;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34,211,238,0.4) 0%, rgba(0,0,0,0) 70%);
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+/* ===========================
+🚀 WELCOME TEXT
+=========================== */
+.welcome-container {
+    position: relative;
+    height: 80px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.welcome-text {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    white-space: nowrap;
+    background: linear-gradient(90deg, #22d3ee, #3b82f6, #a855f7, #22d3ee);
+    background-size: 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: slideMove 12s linear infinite, shimmer 4s infinite;
+}
+
+@keyframes slideMove {
+    0% { transform: translateX(-60%); }
+    100% { transform: translateX(60%); }
+}
+
+@keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+/* ===========================
+✨ SPARKLE
+=========================== */
+.sparkle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    animation: sparkleAnim 3s infinite ease-in-out;
+}
+
+.sparkle:nth-child(2) { top: 10px; left: 20%; animation-delay: 0s; }
+.sparkle:nth-child(3) { top: 50px; left: 50%; animation-delay: 1s; }
+.sparkle:nth-child(4) { top: 20px; left: 80%; animation-delay: 2s; }
+
+@keyframes sparkleAnim {
+    0% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 1; transform: scale(1.5); }
+    100% { opacity: 0; transform: scale(0.5); }
+}
+
+/* ===========================
+💎 BUTTON STYLE
+=========================== */
+div.stButton > button {
+    background: linear-gradient(90deg,#3b82f6,#22d3ee);
+    border-radius: 12px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+div.stButton > button:hover {
+    box-shadow: 0 0 20px #22d3ee;
+    transform: scale(1.05);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 /* ===== WELCOME CONTAINER ===== */
 .welcome-container {
     position: relative;
@@ -183,6 +303,15 @@ users = {
 
 if "login" not in st.session_state:
     st.session_state.login = False
+    
+st.markdown("""
+<div class="welcome-container">
+    <div class="welcome-text">✨ WELCOME TO AHA WEBSITE ✨</div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+</div>
+""", unsafe_allow_html=True)
 
 if not st.session_state.login:
     st.markdown("<div class='login-bg'>", unsafe_allow_html=True)
@@ -199,13 +328,26 @@ if not st.session_state.login:
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    if st.button("Login"):
-        if username in users and users[username]["password"] == password:
-            st.session_state.login = True
-            st.session_state.role = users[username]["role"]
-            st.success("Login berhasil 🚀")
-            time.sleep(1)
-            st.rerun()
+    import base64
+
+sound_file = open("https://www.soundjay.com/buttons/sounds/button-3.mp3", "rb")
+sound_bytes = sound_file.read()
+sound_base64 = base64.b64encode(sound_bytes).decode()
+
+audio_html = f"""
+<audio id="loginSound" src="data:audio/mp3;base64,{sound_base64}"></audio>
+<script>
+function playSound() {{
+    document.getElementById("loginSound").play();
+}}
+</script>
+"""
+
+st.markdown(audio_html, unsafe_allow_html=True)
+
+    if st.button("Login", on_click=None):
+    st.markdown("<script>playSound()</script>", unsafe_allow_html=True)
+
         else:
             st.error("Login salah")
 
@@ -302,4 +444,15 @@ st.plotly_chart(fig, use_container_width=True)
 st.caption("Auto refresh setiap 30 detik")
 time.sleep(30)
 st.rerun()
+
+st.markdown("""
+<div class="cursor-glow" id="cursorGlow"></div>
+<script>
+const glow = document.getElementById('cursorGlow');
+document.addEventListener('mousemove', e => {
+    glow.style.left = e.clientX + 'px';
+    glow.style.top = e.clientY + 'px';
+});
+</script>
+""", unsafe_allow_html=True)
 
