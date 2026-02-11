@@ -1,160 +1,184 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from supabase import create_client
+import time
 
-# =========================
-# KONFIGURASI HALAMAN
-# =========================
+# ===============================
+# CONFIG
+# ===============================
 st.set_page_config(
     page_title="Database Akademik Siswa",
-    page_icon="📊",
-    layout="wide"
+    layout="wide",
+    page_icon="📚"
 )
 
-# =========================
-# STYLE ESTETIK
-# =========================
+# ===============================
+# SUPABASE CONNECTION
+# ===============================
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# ===============================
+# STYLE SUPER UI
+# ===============================
 st.markdown("""
 <style>
+
 body {
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    background: linear-gradient(135deg,#0f172a,#1e293b);
 }
 
-.glass {
-    background: rgba(255,255,255,0.08);
-    padding: 25px;
-    border-radius: 20px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 0 25px rgba(0,255,255,0.3);
+.main-title {
+    font-size:40px;
+    font-weight:800;
+    color:#38bdf8;
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 10px #38bdf8; }
+    to { text-shadow: 0 0 25px #22d3ee; }
 }
 
 .card {
-    padding: 20px;
-    border-radius: 20px;
-    background: rgba(0,0,0,0.5);
-    text-align: center;
-    box-shadow: 0 0 20px rgba(0,255,255,0.4);
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.05);
+    padding:25px;
+    border-radius:20px;
+    text-align:center;
+    box-shadow: 0 0 25px rgba(56,189,248,0.3);
+    margin-bottom:15px;
 }
 
-.card h3 {
-    color: #00f7ff;
-}
-
-.card p {
-    font-size: 32px;
-    font-weight: bold;
-    color: white;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# SUPABASE CONNECTION
-# =========================
-try:
-    SUPABASE_URL = st.secrets["SUPABASE_URL"]
-    SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    CONNECTED = True
-except:
-    CONNECTED = False
-    st.warning("⚠ Supabase tidak terhubung.")
+# ===============================
+# LOGIN SYSTEM
+# ===============================
+users = {
+    "admin": {"password": "admin123", "role": "admin"},
+    "siswa": {"password": "siswa123", "role": "siswa"}
+}
 
-# =========================
+if "login" not in st.session_state:
+    st.session_state.login = False
+
+if not st.session_state.login:
+    st.markdown("<div class='main-title'>🔐 LOGIN SISTEM</div>", unsafe_allow_html=True)
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if username in users and users[username]["password"] == password:
+            st.session_state.login = True
+            st.session_state.role = users[username]["role"]
+            st.success("Login berhasil!")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error("Username / Password salah")
+
+    st.stop()
+
+# ===============================
 # LOAD DATA
-# =========================
+# ===============================
 def load_data():
-    if not CONNECTED:
-        return pd.DataFrame()
-    try:
-        res = supabase.table("database-akademik-siswa").select("*").execute()
-        return pd.DataFrame(res.data)
-    except:
-        return pd.DataFrame()
+    res = supabase.table("database-akademik-siswa").select("*").execute()
+    return pd.DataFrame(res.data)
+
+def insert_data(nama, nilai):
+    supabase.table("database-akademik-siswa").insert({
+        "nama": nama,
+        "nilai": nilai
+    }).execute()
+
+def delete_data(id):
+    supabase.table("database-akademik-siswa").delete().eq("id", id).execute()
 
 df = load_data()
 
-# =========================
-# HITUNG STATUS
-# =========================
-if not df.empty:
-    df["status"] = df["nilai"].apply(
-        lambda x: "Lulus" if x >= 75 else "Tidak Lulus"
-    )
-
-# =========================
-# DASHBOARD
-# =========================
-st.title("📊 DATABASE AKADEMIK SISWA")
-
 if df.empty:
-    st.info("Belum ada data.")
-else:
-    total = len(df)
-    lulus = len(df[df["status"] == "Lulus"])
-    tidak = len(df[df["status"] == "Tidak Lulus"])
+    st.warning("Belum ada data.")
+    st.stop()
 
-    c1, c2, c3 = st.columns(3)
+df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
 
-    with c1:
-        st.markdown(f"""
-        <div class='card'>
-            <h3>Total</h3>
-            <p>{total}</p>
-        </div>
-        """, unsafe_allow_html=True)
+# ===============================
+# HEADER
+# ===============================
+st.markdown("<div class='main-title'>📚 DATABASE AKADEMIK SISWA</div>", unsafe_allow_html=True)
+st.divider()
 
-    with c2:
-        st.markdown(f"""
-        <div class='card'>
-            <h3>Lulus</h3>
-            <p>{lulus}</p>
-        </div>
-        """, unsafe_allow_html=True)
+# ===============================
+# METRIC CARDS
+# ===============================
+col1, col2, col3 = st.columns(3)
 
-    with c3:
-        st.markdown(f"""
-        <div class='card'>
-            <h3>Tidak Lulus</h3>
-            <p>{tidak}</p>
-        </div>
-        """, unsafe_allow_html=True)
+col1.markdown(f"<div class='card'><h3>Total</h3><h2>{len(df)}</h2></div>", unsafe_allow_html=True)
+col2.markdown(f"<div class='card'><h3>Lulus</h3><h2>{(df['status']=='Lulus').sum()}</h2></div>", unsafe_allow_html=True)
+col3.markdown(f"<div class='card'><h3>Tidak Lulus</h3><h2>{(df['status']=='Tidak Lulus').sum()}</h2></div>", unsafe_allow_html=True)
 
-    st.subheader("📋 Data Siswa")
-    st.dataframe(df)
+st.divider()
 
-# =========================
-# TAMBAH DATA
-# =========================
-st.subheader("➕ Tambah Data")
+# ===============================
+# DATA TABLE
+# ===============================
+st.subheader("📋 Data Siswa")
+st.dataframe(df, use_container_width=True)
 
-nama = st.text_input("Nama")
-nilai = st.number_input("Nilai", 0, 100, 0)
+# ===============================
+# ADMIN PANEL
+# ===============================
+if st.session_state.role == "admin":
+    st.divider()
+    st.subheader("⚙️ Panel Admin")
 
-if st.button("Simpan"):
-    if CONNECTED and nama:
-        supabase.table("database-akademik-siswa").insert({
-            "nama": nama,
-            "nilai": nilai
-        }).execute()
-        st.success("Data ditambahkan")
-        st.rerun()
+    nama = st.text_input("Nama")
+    nilai = st.number_input("Nilai", 0, 100, 0)
 
-# =========================
-# HAPUS DATA
-# =========================
-if not df.empty:
-    st.subheader("🗑 Hapus Data")
-    pilih = st.selectbox("Pilih siswa", df["nama"].tolist())
+    colA, colB = st.columns(2)
 
-    if st.button("Hapus"):
-        if CONNECTED:
-            supabase.table("database-akademik-siswa").delete().eq("nama", pilih).execute()
-            st.warning("Data dihapus")
+    with colA:
+        if st.button("Tambah Data"):
+            insert_data(nama, nilai)
+            st.success("Data ditambahkan!")
+            time.sleep(1)
             st.rerun()
 
-# =========================
-# FOOTER
-# =========================
-st.markdown("---")
-st.caption("✨ Database Akademik Siswa - Supabase + Streamlit Cloud")
+    with colB:
+        id_hapus = st.number_input("ID Hapus", 0, 1000, 0)
+        if st.button("Hapus Data"):
+            delete_data(id_hapus)
+            st.warning("Data dihapus!")
+            time.sleep(1)
+            st.rerun()
+
+# ===============================
+# INTERACTIVE GRAPH
+# ===============================
+st.divider()
+st.subheader("📊 Grafik Interaktif")
+
+fig = px.bar(
+    df,
+    x="nama",
+    y="nilai",
+    color="status",
+    title="Grafik Nilai Siswa",
+    template="plotly_dark"
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+# ===============================
+# AUTO REFRESH
+# ===============================
+st.caption("Auto refresh setiap 30 detik")
+time.sleep(30)
+st.rerun()
