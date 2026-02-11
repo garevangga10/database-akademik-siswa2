@@ -2,55 +2,83 @@ import streamlit as st
 import pandas as pd
 from supabase import create_client
 
-# =====================
-# PAGE CONFIG
-# =====================
+# =========================
+# CONFIG
+# =========================
 st.set_page_config(
     page_title="Database Akademik Siswa",
     page_icon="📚",
     layout="wide"
 )
 
-# =====================
-# SUPABASE
-# =====================
-supabase = create_client(
-    st.secrets["SUPABASE_URL"],
-    st.secrets["SUPABASE_ANON_KEY"]
-)
+TABLE_NAME = "siswa"
 
-# =====================
-# STYLE (NEON + ANIMASI)
-# =====================
+# =========================
+# CONNECT SUPABASE (SAFE)
+# =========================
+def connect_supabase():
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_ANON_KEY"]
+        return create_client(url, key)
+    except Exception:
+        return None
+
+supabase = connect_supabase()
+
+# =========================
+# LOAD DATA (ANTI CRASH)
+# =========================
+def load_data():
+    if supabase is None:
+        return pd.DataFrame()
+
+    try:
+        res = supabase.table(TABLE_NAME).select("*").execute()
+        return pd.DataFrame(res.data)
+    except Exception:
+        return pd.DataFrame()
+
+df = load_data()
+
+# =========================
+# FALLBACK DATA (JIKA SUPABASE GAGAL)
+# =========================
+if df.empty:
+    st.warning("⚠️ Supabase tidak terhubung. Menggunakan data sementara.")
+    df = pd.DataFrame({
+        "id": [1,2,3,4],
+        "nama": ["Tegar","Andi","Siti","Budi"],
+        "nilai": [90,78,85,60]
+    })
+
+# =========================
+# STYLE
+# =========================
 st.markdown("""
 <style>
 body {
-    background: linear-gradient(135deg,#0f172a,#020617);
-}
-@keyframes glow {
-  0% {text-shadow:0 0 5px #38bdf8;}
-  50% {text-shadow:0 0 20px #38bdf8;}
-  100% {text-shadow:0 0 5px #38bdf8;}
+    background: linear-gradient(135deg,#020617,#0f172a);
 }
 .title {
-  font-size:42px;
-  font-weight:900;
-  color:#38bdf8;
-  animation:glow 2s infinite;
+    font-size:38px;
+    font-weight:900;
+    color:#38bdf8;
+    text-shadow:0 0 15px #38bdf8;
 }
 .card {
-  background:rgba(15,23,42,.85);
-  border-radius:18px;
-  padding:20px;
-  box-shadow:0 0 20px rgba(56,189,248,.3);
-  text-align:center;
+    background:rgba(15,23,42,.9);
+    padding:20px;
+    border-radius:16px;
+    box-shadow:0 0 20px rgba(56,189,248,.4);
+    text-align:center;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# =====================
+# =========================
 # LOGIN
-# =====================
+# =========================
 if "login" not in st.session_state:
     st.session_state.login = False
 
@@ -68,27 +96,17 @@ if not st.session_state.login:
 
     st.stop()
 
-# =====================
-# LOAD DATA
-# =====================
-def load_data():
-    res = supabase.table("siswa").select("*").execute()
-    return pd.DataFrame(res.data)
-
-df = load_data()
-
-if not df.empty:
-    df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
-
-# =====================
+# =========================
 # HEADER
-# =====================
+# =========================
 st.markdown("<div class='title'>📚 DATABASE AKADEMIK SISWA</div>", unsafe_allow_html=True)
 st.divider()
 
-# =====================
-# METRIC
-# =====================
+# =========================
+# STATUS
+# =========================
+df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
+
 c1,c2,c3 = st.columns(3)
 
 with c1:
@@ -98,53 +116,28 @@ with c2:
 with c3:
     st.markdown(f"<div class='card'><h3>Tidak Lulus</h3><h1>{(df['status']=='Tidak Lulus').sum()}</h1></div>", unsafe_allow_html=True)
 
-# =====================
+# =========================
 # TABLE
-# =====================
+# =========================
 st.subheader("📋 Data Siswa")
 st.dataframe(df, use_container_width=True)
 
-# =====================
-# ADD DATA
-# =====================
-st.subheader("➕ Tambah Data")
+# =========================
+# ADD DATA (HANYA JIKA SUPABASE AKTIF)
+# =========================
+if supabase is not None:
+    st.subheader("➕ Tambah Data")
 
-nama = st.text_input("Nama Siswa")
-nilai = st.number_input("Nilai", 0, 100)
+    nama = st.text_input("Nama")
+    nilai = st.number_input("Nilai", 0, 100)
 
-if st.button("Simpan"):
-    supabase.table("siswa").insert({
-        "nama": nama,
-        "nilai": nilai
-    }).execute()
-    st.success("Data ditambahkan")
-    st.rerun()
-
-# =====================
-# EDIT & DELETE
-# =====================
-st.subheader("✏️ Edit / Hapus")
-
-if not df.empty:
-    pilih = st.selectbox("Pilih siswa", df["nama"])
-    row = df[df["nama"] == pilih].iloc[0]
-
-    nilai_edit = st.number_input("Edit nilai", 0, 100, int(row["nilai"]))
-
-    col1,col2 = st.columns(2)
-
-    with col1:
-        if st.button("Update"):
-            supabase.table("siswa").update({
-                "nilai": nilai_edit
-            }).eq("id", int(row["id"])).execute()
-            st.success("Data diupdate")
+    if st.button("Simpan"):
+        try:
+            supabase.table(TABLE_NAME).insert({
+                "nama": nama,
+                "nilai": nilai
+            }).execute()
+            st.success("Data ditambahkan")
             st.rerun()
-
-    with col2:
-        if st.button("Hapus"):
-            supabase.table("siswa").delete().eq("id", int(row["id"])).execute()
-            st.warning("Data dihapus")
-            st.rerun()
-
-st.caption("✨ Supabase • Streamlit • Database Permanen")
+        except Exception:
+            st.error("Gagal menyimpan ke Supabase")
