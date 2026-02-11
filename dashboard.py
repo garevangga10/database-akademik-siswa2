@@ -27,15 +27,31 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 st.markdown("""
 <style>
 
+/* BACKGROUND */
 body {
-    background: linear-gradient(135deg,#0f172a,#1e293b);
+    background: radial-gradient(circle at top left, #1e293b, #0f172a 60%);
 }
 
+/* MOTIF HALUS */
+body::before {
+    content: "";
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 25px 25px;
+    opacity: 0.3;
+    z-index: -1;
+}
+
+/* TITLE */
 .main-title {
-    font-size:40px;
-    font-weight:800;
-    color:#38bdf8;
-    animation: glow 2s infinite alternate;
+    font-size: 42px;
+    font-weight: 800;
+    color: #38bdf8;
+    text-align: center;
+    margin-bottom: 10px;
+    animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
@@ -43,14 +59,68 @@ body {
     to { text-shadow: 0 0 25px #22d3ee; }
 }
 
+/* RUNNING TEXT */
+.marquee {
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.marquee span {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee 15s linear infinite;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+@keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
+
+/* GLASS CARD */
 .card {
-    backdrop-filter: blur(12px);
-    background: rgba(255,255,255,0.05);
-    padding:25px;
-    border-radius:20px;
-    text-align:center;
-    box-shadow: 0 0 25px rgba(56,189,248,0.3);
-    margin-bottom:15px;
+    backdrop-filter: blur(15px);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(56,189,248,0.15);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 40px rgba(56,189,248,0.4);
+}
+
+/* BUTTON */
+.stButton > button {
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    color: white;
+    border-radius: 12px;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+}
+
+.stButton > button:hover {
+    background: linear-gradient(90deg, #06b6d4, #3b82f6);
+}
+
+/* TABLE */
+[data-testid="stDataFrame"] {
+    background: rgba(255,255,255,0.03);
+    border-radius: 15px;
+    padding: 10px;
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: 28px;
+    }
 }
 
 </style>
@@ -113,6 +183,13 @@ df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus"
 # HEADER
 # ===============================
 st.markdown("<div class='main-title'>📚 DATABASE AKADEMIK SISWA</div>", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="marquee">
+<span>✨ Sistem Akademik Modern • Supabase Cloud • Real-Time Data • MAS Al-Hamidiyah ✨</span>
+</div>
+""", unsafe_allow_html=True)
+
 st.divider()
 
 # ===============================
@@ -120,11 +197,29 @@ st.divider()
 # ===============================
 col1, col2, col3 = st.columns(3)
 
-col1.markdown(f"<div class='card'><h3>Total</h3><h2>{len(df)}</h2></div>", unsafe_allow_html=True)
-col2.markdown(f"<div class='card'><h3>Lulus</h3><h2>{(df['status']=='Lulus').sum()}</h2></div>", unsafe_allow_html=True)
-col3.markdown(f"<div class='card'><h3>Tidak Lulus</h3><h2>{(df['status']=='Tidak Lulus').sum()}</h2></div>", unsafe_allow_html=True)
+with col1:
+    st.markdown(f"""
+    <div class='card'>
+        <h3>Total Siswa</h3>
+        <h1>{len(df)}</h1>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.divider()
+with col2:
+    st.markdown(f"""
+    <div class='card'>
+        <h3>Lulus</h3>
+        <h1>{(df['status']=='Lulus').sum()}</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class='card'>
+        <h3>Tidak Lulus</h3>
+        <h1>{(df['status']=='Tidak Lulus').sum()}</h1>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ===============================
 # DATA TABLE
@@ -182,3 +277,4 @@ st.plotly_chart(fig, use_container_width=True)
 st.caption("Auto refresh setiap 30 detik")
 time.sleep(30)
 st.rerun()
+
