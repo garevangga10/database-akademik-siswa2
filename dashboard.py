@@ -6,13 +6,12 @@ import time
 
 st.set_page_config(page_title="GOD MODE AHA", layout="wide")
 
-# =========================================
-# 🌌 GOD MODE PARTICLE BACKGROUND
-# =========================================
+# =================================================
+# 🌌 PARTICLE BACKGROUND + STYLE
+# =================================================
 st.markdown("""
 <style>
 body {
-    margin:0;
     background:#0f172a;
     overflow-x:hidden;
 }
@@ -60,7 +59,7 @@ body {
     100% {background-position:200%;}
 }
 
-/* Neon Buttons */
+/* Button */
 .stButton>button {
     background:linear-gradient(90deg,#3b82f6,#06b6d4);
     border:none;
@@ -83,7 +82,7 @@ body {
 <script>
 particlesJS("particles-js", {
   particles: {
-    number: { value: 60 },
+    number: { value: 70 },
     size: { value: 3 },
     color: { value: "#38bdf8" },
     line_linked: {
@@ -99,18 +98,9 @@ particlesJS("particles-js", {
 </script>
 """, unsafe_allow_html=True)
 
-# =========================================
-# 🎵 Ambient Background Music
-# =========================================
-st.markdown("""
-<audio autoplay loop>
-<source src="https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3" type="audio/mp3">
-</audio>
-""", unsafe_allow_html=True)
-
-# =========================================
-# 🔊 SOUND EFFECT
-# =========================================
+# =================================================
+# 🔊 SOUND
+# =================================================
 def play_sound(url):
     st.markdown(f"""
     <audio autoplay>
@@ -121,47 +111,70 @@ def play_sound(url):
 click_sound = "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"
 success_sound = "https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3"
 
-# =========================================
+# =================================================
 # SUPABASE CONNECT
-# =========================================
+# =================================================
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# =========================================
-# LOGIN SYSTEM
-# =========================================
-users = {
-    "admin": {"password": "admin123", "role": "admin"},
-    "siswa": {"password": "siswa123", "role": "siswa"}
-}
+# =================================================
+# SESSION INIT
+# =================================================
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-if "login" not in st.session_state:
-    st.session_state.login = False
+# =================================================
+# LOGIN & REGISTER
+# =================================================
+if not st.session_state.user:
 
-if not st.session_state.login:
+    st.markdown("<div class='main-title'>AL-HAMIDIYAH SYSTEM</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='main-title'> AL-HAMIDIYAH DATABASE  </div>", unsafe_allow_html=True)
+    tab1, tab2 = st.tabs(["🔐 Login", "📝 Daftar"])
 
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    # LOGIN
+    with tab1:
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
 
-    if st.button("Login"):
-        play_sound(click_sound)
-        if username in users and users[username]["password"] == password:
-            play_sound(success_sound)
-            st.session_state.login = True
-            st.session_state.role = users[username]["role"]
-            time.sleep(0.6)
-            st.rerun()
-        else:
-            st.error("Login salah")
+        if st.button("Login"):
+            play_sound(click_sound)
+            try:
+                res = supabase.auth.sign_in_with_password({
+                    "email": email,
+                    "password": password
+                })
+                if res.user:
+                    play_sound(success_sound)
+                    st.session_state.user = res.user
+                    time.sleep(0.5)
+                    st.rerun()
+            except:
+                st.error("Login gagal")
+
+    # REGISTER
+    with tab2:
+        email_reg = st.text_input("Email Baru")
+        password_reg = st.text_input("Password Baru", type="password")
+
+        if st.button("Daftar"):
+            play_sound(click_sound)
+            try:
+                supabase.auth.sign_up({
+                    "email": email_reg,
+                    "password": password_reg
+                })
+                play_sound(success_sound)
+                st.success("Akun berhasil dibuat 🎉")
+            except:
+                st.error("Gagal daftar (email mungkin sudah ada)")
 
     st.stop()
 
-# =========================================
+# =================================================
 # LOAD DATA
-# =========================================
+# =================================================
 def load_data():
     res = supabase.table("database-akademik-siswa").select("*").execute()
     return pd.DataFrame(res.data)
@@ -175,20 +188,21 @@ def delete_data(id):
 df = load_data()
 
 if df.empty:
-    st.warning("Database kosong.")
+    st.warning("Database kosong")
     st.stop()
 
 df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
 
-# =========================================
+# =================================================
 # HEADER
-# =========================================
-st.markdown("<div class='main-title'>DASHBOARD DATABASE AL-HAMIDIYAH</div>", unsafe_allow_html=True)
+# =================================================
+st.markdown("<div class='main-title'>DASHBOARD DATABASE</div>", unsafe_allow_html=True)
+st.caption(f"Login sebagai: {st.session_state.user.email}")
 st.divider()
 
-# =========================================
+# =================================================
 # METRICS
-# =========================================
+# =================================================
 c1,c2,c3 = st.columns(3)
 
 c1.markdown(f"<div class='card'><h3>Total</h3><h1>{len(df)}</h1></div>", unsafe_allow_html=True)
@@ -197,16 +211,18 @@ c3.markdown(f"<div class='card'><h3>Tidak Lulus</h3><h1>{(df['status']=='Tidak L
 
 st.divider()
 
-# =========================================
+# =================================================
 # DATA TABLE
-# =========================================
+# =================================================
 st.subheader("📋 Data Siswa")
 st.dataframe(df, use_container_width=True)
 
-# =========================================
-# ADMIN PANEL
-# =========================================
-if st.session_state.role == "admin":
+# =================================================
+# ADMIN EMAIL
+# =================================================
+ADMIN_EMAIL = "admin@gmail.com"
+
+if st.session_state.user.email == ADMIN_EMAIL:
 
     st.subheader("⚙️ Admin Panel")
 
@@ -217,7 +233,7 @@ if st.session_state.role == "admin":
         play_sound(click_sound)
         insert_data(nama, nilai)
         play_sound(success_sound)
-        time.sleep(0.6)
+        time.sleep(0.5)
         st.rerun()
 
     id_hapus = st.number_input("ID Hapus", 0, 1000, 0)
@@ -226,28 +242,24 @@ if st.session_state.role == "admin":
         play_sound(click_sound)
         delete_data(id_hapus)
         play_sound(success_sound)
-        time.sleep(0.6)
+        time.sleep(0.5)
         st.rerun()
+else:
+    st.info("Mode Siswa (View Only)")
 
-# =========================================
-# INTERACTIVE CHART
-# =========================================
-st.subheader("📊 GOD MODE INTERACTIVE CHART")
+# =================================================
+# CHART
+# =================================================
+st.subheader("📊 Interactive Chart")
 
-fig = px.bar(
-    df,
-    x="nama",
-    y="nilai",
-    color="status",
-    template="plotly_dark"
-)
-
+fig = px.bar(df, x="nama", y="nilai", color="status", template="plotly_dark")
 st.plotly_chart(fig, use_container_width=True)
 
-# =========================================
+# =================================================
 # LOGOUT
-# =========================================
+# =================================================
 if st.button("Logout"):
     play_sound(click_sound)
-    st.session_state.login = False
+    supabase.auth.sign_out()
+    st.session_state.user = None
     st.rerun()
