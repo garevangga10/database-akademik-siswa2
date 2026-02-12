@@ -183,7 +183,7 @@ df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus"
 # =========================================
 # HEADER
 # =========================================
-st.markdown("<div class='main-title'>🚀 GOD MODE ACADEMIC DASHBOARD</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>DASHBOARD DATABASE AL-HAMIDIYAH</div>", unsafe_allow_html=True)
 st.divider()
 
 # =========================================
@@ -251,6 +251,7 @@ if st.button("Logout"):
     play_sound(click_sound)
     st.session_state.login = False
     st.rerun()
+
 
 
 
