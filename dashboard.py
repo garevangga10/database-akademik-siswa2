@@ -4,7 +4,7 @@ import plotly.express as px
 from supabase import create_client
 import time
 
-st.set_page_config(page_title="AL-HAMIDIYAH DATABASE", layout="wide")
+st.set_page_config(page_title="AL-HAMIDIYAH SYSTEM", layout="wide")
 
 # ===============================
 # CONNECT SUPABASE
@@ -20,11 +20,11 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 # ===============================
-# LOGIN / REGISTER UI
+# LOGIN / REGISTER PAGE
 # ===============================
 if not st.session_state.user:
 
-    st.markdown("<h1 style='text-align:center;'>🔐 AL-HAMIDIYAH SYSTEM</h1>", unsafe_allow_html=True)
+    st.title("🔐 AL-HAMIDIYAH SYSTEM")
 
     tab1, tab2 = st.tabs(["Login", "Daftar"])
 
@@ -34,18 +34,23 @@ if not st.session_state.user:
         password = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            res = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
 
-            if res.user:
-                st.session_state.user = res.user
-                st.success("Login berhasil 🚀")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error("Login gagal")
+            try:
+                res = supabase.auth.sign_in_with_password({
+                    "email": email,
+                    "password": password
+                })
+
+                if res.user:
+                    st.session_state.user = res.user
+                    st.success("Login berhasil 🚀")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Login gagal")
+
+            except Exception:
+                st.error("Email atau password salah")
 
     # ================= REGISTER =================
     with tab2:
@@ -53,15 +58,23 @@ if not st.session_state.user:
         password_reg = st.text_input("Password Baru", type="password")
 
         if st.button("Daftar Akun"):
-            res = supabase.auth.sign_up({
-                "email": email_reg,
-                "password": password_reg
-            })
 
-            if res.user:
-                st.success("Akun berhasil dibuat 🎉 Silakan login.")
+            if len(password_reg) < 6:
+                st.error("Password minimal 6 karakter")
             else:
-                st.error("Gagal daftar akun")
+                try:
+                    res = supabase.auth.sign_up({
+                        "email": email_reg,
+                        "password": password_reg
+                    })
+
+                    if res.user:
+                        st.success("Akun berhasil dibuat 🎉 Silakan login.")
+                    else:
+                        st.error("Gagal daftar akun")
+
+                except Exception:
+                    st.error("Email sudah terdaftar atau Auth belum diaktifkan.")
 
     st.stop()
 
@@ -69,8 +82,11 @@ if not st.session_state.user:
 # LOAD DATA
 # ===============================
 def load_data():
-    res = supabase.table("database-akademik-siswa").select("*").execute()
-    return pd.DataFrame(res.data)
+    try:
+        res = supabase.table("database-akademik-siswa").select("*").execute()
+        return pd.DataFrame(res.data)
+    except Exception:
+        return pd.DataFrame()
 
 def insert_data(nama, nilai):
     supabase.table("database-akademik-siswa").insert({
@@ -84,13 +100,13 @@ def delete_data(id):
 df = load_data()
 
 if df.empty:
-    st.warning("Database kosong.")
+    st.warning("Database kosong atau gagal dimuat.")
     st.stop()
 
 df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
 
 # ===============================
-# HEADER
+# DASHBOARD
 # ===============================
 st.title("🚀 DASHBOARD DATABASE AL-HAMIDIYAH")
 st.caption(f"Login sebagai: {st.session_state.user.email}")
@@ -99,16 +115,16 @@ st.divider()
 # ===============================
 # METRICS
 # ===============================
-c1,c2,c3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
 c1.metric("Total", len(df))
-c2.metric("Lulus", (df['status']=='Lulus').sum())
-c3.metric("Tidak Lulus", (df['status']=='Tidak Lulus').sum())
+c2.metric("Lulus", (df['status'] == 'Lulus').sum())
+c3.metric("Tidak Lulus", (df['status'] == 'Tidak Lulus').sum())
 
 st.divider()
 
 # ===============================
-# TABLE
+# DATA TABLE
 # ===============================
 st.subheader("📋 Data Siswa")
 st.dataframe(df, use_container_width=True)
@@ -116,7 +132,9 @@ st.dataframe(df, use_container_width=True)
 # ===============================
 # ADMIN CHECK (EMAIL ADMIN)
 # ===============================
-if st.session_state.user.email == "admin@gmail.com":
+ADMIN_EMAIL = "admin@gmail.com"
+
+if st.session_state.user.email == ADMIN_EMAIL:
 
     st.subheader("⚙️ Admin Panel")
 
@@ -136,6 +154,9 @@ if st.session_state.user.email == "admin@gmail.com":
         st.warning("Data dihapus")
         time.sleep(1)
         st.rerun()
+
+else:
+    st.info("Anda login sebagai siswa (hanya bisa melihat data)")
 
 # ===============================
 # CHART
