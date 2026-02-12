@@ -2,18 +2,19 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from supabase import create_client
+import hashlib
 import time
 
-st.set_page_config(page_title="AL-HAMIDIYAH SYSTEM", layout="wide")
+st.set_page_config(page_title="AL-HAMIDIYAH PRO SYSTEM", layout="wide")
 
 # ===============================
-# STYLE GOD MODE
+# STYLE RESPONSIVE
 # ===============================
 st.markdown("""
 <style>
 body {background:#0f172a;}
 .main-title {
-    font-size:50px;
+    font-size:45px;
     font-weight:900;
     text-align:center;
     background: linear-gradient(90deg,#38bdf8,#22d3ee,#3b82f6);
@@ -21,19 +22,15 @@ body {background:#0f172a;}
     -webkit-text-fill-color:transparent;
 }
 .card {
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(15px);
     background: rgba(255,255,255,0.05);
-    padding:25px;
-    border-radius:25px;
-    text-align:center;
-    box-shadow:0 0 40px rgba(0,255,255,0.2);
-}
-.stButton>button {
-    background:linear-gradient(90deg,#3b82f6,#06b6d4);
-    border:none;
+    padding:20px;
     border-radius:20px;
-    padding:10px 25px;
-    color:white;
+    text-align:center;
+    box-shadow:0 0 30px rgba(0,255,255,0.2);
+}
+@media(max-width:768px){
+    .main-title{font-size:28px;}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -46,6 +43,12 @@ SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ===============================
+# PASSWORD HASH
+# ===============================
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# ===============================
 # SESSION INIT
 # ===============================
 if "user" not in st.session_state:
@@ -56,7 +59,7 @@ if "user" not in st.session_state:
 # ===============================
 if not st.session_state.user:
 
-    st.markdown("<div class='main-title'>🔐 AL-HAMIDIYAH SYSTEM</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'>🔐 AL-HAMIDIYAH PROFESSIONAL SYSTEM</div>", unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["Login", "Daftar"])
 
@@ -66,10 +69,12 @@ if not st.session_state.user:
         password = st.text_input("Password", type="password")
 
         if st.button("Login"):
+            hashed = hash_password(password)
+
             res = supabase.table("users")\
                 .select("*")\
                 .eq("username", username)\
-                .eq("password", password)\
+                .eq("password", hashed)\
                 .execute()
 
             if len(res.data) > 0:
@@ -89,10 +94,9 @@ if not st.session_state.user:
             try:
                 supabase.table("users").insert({
                     "username": new_user,
-                    "password": new_pass,
+                    "password": hash_password(new_pass),
                     "role": "siswa"
                 }).execute()
-
                 st.success("Akun berhasil dibuat 🎉")
             except:
                 st.error("Username sudah dipakai")
@@ -100,16 +104,17 @@ if not st.session_state.user:
     st.stop()
 
 # ===============================
-# LOAD DATA SISWA
+# LOAD DATA
 # ===============================
 def load_data():
     res = supabase.table("database-akademik-siswa").select("*").execute()
     return pd.DataFrame(res.data)
 
-def insert_data(nama, nilai):
+def insert_data(nama, nilai, username):
     supabase.table("database-akademik-siswa").insert({
         "nama": nama,
-        "nilai": nilai
+        "nilai": nilai,
+        "username": username
     }).execute()
 
 def delete_data(id):
@@ -124,22 +129,42 @@ if df.empty:
 df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
 
 # ===============================
+# RANKING
+# ===============================
+df = df.sort_values(by="nilai", ascending=False)
+df["ranking"] = range(1, len(df)+1)
+
+# ===============================
 # DASHBOARD
 # ===============================
-st.markdown("<div class='main-title'>🎓 DASHBOARD SISWA</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-title'>🎓 DASHBOARD AKADEMIK</div>", unsafe_allow_html=True)
 st.caption(f"Login sebagai: {st.session_state.user['username']} ({st.session_state.user['role']})")
 st.divider()
 
+# ===============================
+# FILTER ROLE
+# ===============================
+if st.session_state.user["role"] == "siswa":
+    df_view = df[df["username"] == st.session_state.user["username"]]
+else:
+    df_view = df
+
+# ===============================
+# METRICS
+# ===============================
 c1,c2,c3 = st.columns(3)
 
-c1.markdown(f"<div class='card'><h3>Total</h3><h1>{len(df)}</h1></div>", unsafe_allow_html=True)
-c2.markdown(f"<div class='card'><h3>Lulus</h3><h1>{(df['status']=='Lulus').sum()}</h1></div>", unsafe_allow_html=True)
-c3.markdown(f"<div class='card'><h3>Tidak Lulus</h3><h1>{(df['status']=='Tidak Lulus').sum()}</h1></div>", unsafe_allow_html=True)
+c1.markdown(f"<div class='card'><h3>Total</h3><h1>{len(df_view)}</h1></div>", unsafe_allow_html=True)
+c2.markdown(f"<div class='card'><h3>Rata-rata</h3><h1>{round(df_view['nilai'].mean(),1)}</h1></div>", unsafe_allow_html=True)
+c3.markdown(f"<div class='card'><h3>Ranking Tertinggi</h3><h1>{df_view['nilai'].max()}</h1></div>", unsafe_allow_html=True)
 
 st.divider()
 
+# ===============================
+# DATA TABLE
+# ===============================
 st.subheader("📋 Data Siswa")
-st.dataframe(df, use_container_width=True)
+st.dataframe(df_view, use_container_width=True)
 
 # ===============================
 # ADMIN PANEL
@@ -148,11 +173,12 @@ if st.session_state.user["role"] == "admin":
 
     st.subheader("⚙️ Admin Panel")
 
-    nama = st.text_input("Nama Baru")
-    nilai = st.number_input("Nilai Baru", 0, 100, 0)
+    nama = st.text_input("Nama")
+    nilai = st.number_input("Nilai", 0, 100, 0)
+    username_input = st.text_input("Username Pemilik Data")
 
     if st.button("Tambah Data"):
-        insert_data(nama, nilai)
+        insert_data(nama, nilai, username_input)
         st.success("Data ditambahkan")
         time.sleep(0.5)
         st.rerun()
@@ -164,15 +190,30 @@ if st.session_state.user["role"] == "admin":
         st.warning("Data dihapus")
         time.sleep(0.5)
         st.rerun()
-else:
-    st.info("Mode Siswa (View Only)")
+
+    # ROLE MANAGEMENT
+    st.subheader("🔧 Role Management")
+
+    users = supabase.table("users").select("*").execute().data
+    user_df = pd.DataFrame(users)
+
+    selected_user = st.selectbox("Pilih User", user_df["username"])
+    new_role = st.selectbox("Role Baru", ["admin", "siswa"])
+
+    if st.button("Update Role"):
+        supabase.table("users").update({
+            "role": new_role
+        }).eq("username", selected_user).execute()
+        st.success("Role diperbarui")
+        time.sleep(0.5)
+        st.rerun()
 
 # ===============================
 # CHART
 # ===============================
-st.subheader("📊 Grafik Nilai")
+st.subheader("📊 Grafik Ranking")
 
-fig = px.bar(df, x="nama", y="nilai", color="status", template="plotly_dark")
+fig = px.bar(df_view, x="nama", y="nilai", color="status")
 st.plotly_chart(fig, use_container_width=True)
 
 # ===============================
