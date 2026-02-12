@@ -141,7 +141,7 @@ if "login" not in st.session_state:
 
 if not st.session_state.login:
 
-    st.markdown("<div class='main-title'> AL-HAMIDIYAH LOGIN DATABASE </div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'> AL-HAMIDIYAH LOGIN </div>", unsafe_allow_html=True)
 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
@@ -251,4 +251,5 @@ if st.button("Logout"):
     play_sound(click_sound)
     st.session_state.login = False
     st.rerun()
+
 
