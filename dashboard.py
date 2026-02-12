@@ -4,54 +4,33 @@ import plotly.express as px
 from supabase import create_client
 import time
 
-st.set_page_config(page_title="Ultimate Academic System", layout="wide")
+st.set_page_config(page_title="GOD MODE AHA", layout="wide")
 
-# ===============================
-# 🌌 ULTIMATE UI STYLE
-# ===============================
+# =========================================
+# 🌌 GOD MODE PARTICLE BACKGROUND
+# =========================================
 st.markdown("""
 <style>
-
-/* Animated Gradient Background */
 body {
-    background: linear-gradient(-45deg,#0f172a,#1e293b,#0ea5e9,#1e293b);
-    background-size: 400% 400%;
-    animation: gradientMove 20s ease infinite;
+    margin:0;
+    background:#0f172a;
+    overflow-x:hidden;
 }
 
-@keyframes gradientMove {
-    0% {background-position:0% 50%;}
-    50% {background-position:100% 50%;}
-    100% {background-position:0% 50%;}
-}
-
-/* Neon Cursor Glow */
-html {
-    cursor: crosshair;
-}
-
-body::after {
-    content:'';
+/* Particle canvas */
+#particles-js {
     position:fixed;
-    width:20px;
-    height:20px;
-    border-radius:50%;
-    background:rgba(56,189,248,0.6);
-    pointer-events:none;
-    mix-blend-mode:screen;
-    animation:pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {transform:scale(1);}
-    50% {transform:scale(1.5);}
-    100% {transform:scale(1);}
+    width:100%;
+    height:100%;
+    z-index:-1;
+    top:0;
+    left:0;
 }
 
 /* Glass Card */
 .card {
     backdrop-filter: blur(25px);
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.07);
     padding:30px;
     border-radius:30px;
     text-align:center;
@@ -66,7 +45,7 @@ body::after {
 
 /* Shimmer Title */
 .main-title {
-    font-size:50px;
+    font-size:55px;
     font-weight:900;
     text-align:center;
     background: linear-gradient(90deg,#38bdf8,#22d3ee,#3b82f6);
@@ -81,12 +60,12 @@ body::after {
     100% {background-position:200%;}
 }
 
-/* Buttons */
+/* Neon Buttons */
 .stButton>button {
     background:linear-gradient(90deg,#3b82f6,#06b6d4);
     border:none;
-    border-radius:20px;
-    padding:12px 35px;
+    border-radius:25px;
+    padding:14px 40px;
     color:white;
     font-weight:600;
     transition:0.3s;
@@ -94,24 +73,44 @@ body::after {
 
 .stButton>button:hover {
     transform:scale(1.1);
-    box-shadow:0 0 30px #38bdf8;
+    box-shadow:0 0 40px #38bdf8;
 }
-
 </style>
+
+<div id="particles-js"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+<script>
+particlesJS("particles-js", {
+  particles: {
+    number: { value: 60 },
+    size: { value: 3 },
+    color: { value: "#38bdf8" },
+    line_linked: {
+      enable: true,
+      distance: 150,
+      color: "#22d3ee",
+      opacity: 0.4,
+      width: 1
+    },
+    move: { enable: true, speed: 2 }
+  }
+});
+</script>
 """, unsafe_allow_html=True)
 
-# ===============================
-# 🎵 AMBIENT MUSIC
-# ===============================
+# =========================================
+# 🎵 Ambient Background Music
+# =========================================
 st.markdown("""
 <audio autoplay loop>
 <source src="https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3" type="audio/mp3">
 </audio>
 """, unsafe_allow_html=True)
 
-# ===============================
+# =========================================
 # 🔊 SOUND EFFECT
-# ===============================
+# =========================================
 def play_sound(url):
     st.markdown(f"""
     <audio autoplay>
@@ -122,16 +121,16 @@ def play_sound(url):
 click_sound = "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"
 success_sound = "https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3"
 
-# ===============================
+# =========================================
 # SUPABASE CONNECT
-# ===============================
+# =========================================
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ===============================
-# LOGIN
-# ===============================
+# =========================================
+# LOGIN SYSTEM
+# =========================================
 users = {
     "admin": {"password": "admin123", "role": "admin"},
     "siswa": {"password": "siswa123", "role": "siswa"}
@@ -142,7 +141,7 @@ if "login" not in st.session_state:
 
 if not st.session_state.login:
 
-    st.markdown("<div class='main-title'>🔐 ULTIMATE LOGIN SYSTEM</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'>⚡ GOD MODE LOGIN ⚡</div>", unsafe_allow_html=True)
 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
@@ -153,16 +152,16 @@ if not st.session_state.login:
             play_sound(success_sound)
             st.session_state.login = True
             st.session_state.role = users[username]["role"]
-            time.sleep(0.7)
+            time.sleep(0.6)
             st.rerun()
         else:
             st.error("Login salah")
 
     st.stop()
 
-# ===============================
+# =========================================
 # LOAD DATA
-# ===============================
+# =========================================
 def load_data():
     res = supabase.table("database-akademik-siswa").select("*").execute()
     return pd.DataFrame(res.data)
@@ -181,15 +180,15 @@ if df.empty:
 
 df["status"] = df["nilai"].apply(lambda x: "Lulus" if x >= 75 else "Tidak Lulus")
 
-# ===============================
+# =========================================
 # HEADER
-# ===============================
-st.markdown("<div class='main-title'>🚀 ULTIMATE ACADEMIC DASHBOARD</div>", unsafe_allow_html=True)
+# =========================================
+st.markdown("<div class='main-title'>🚀 GOD MODE ACADEMIC DASHBOARD</div>", unsafe_allow_html=True)
 st.divider()
 
-# ===============================
+# =========================================
 # METRICS
-# ===============================
+# =========================================
 c1,c2,c3 = st.columns(3)
 
 c1.markdown(f"<div class='card'><h3>Total</h3><h1>{len(df)}</h1></div>", unsafe_allow_html=True)
@@ -198,15 +197,15 @@ c3.markdown(f"<div class='card'><h3>Tidak Lulus</h3><h1>{(df['status']=='Tidak L
 
 st.divider()
 
-# ===============================
-# TABLE
-# ===============================
+# =========================================
+# DATA TABLE
+# =========================================
 st.subheader("📋 Data Siswa")
 st.dataframe(df, use_container_width=True)
 
-# ===============================
+# =========================================
 # ADMIN PANEL
-# ===============================
+# =========================================
 if st.session_state.role == "admin":
 
     st.subheader("⚙️ Admin Panel")
@@ -218,7 +217,7 @@ if st.session_state.role == "admin":
         play_sound(click_sound)
         insert_data(nama, nilai)
         play_sound(success_sound)
-        time.sleep(0.7)
+        time.sleep(0.6)
         st.rerun()
 
     id_hapus = st.number_input("ID Hapus", 0, 1000, 0)
@@ -227,13 +226,13 @@ if st.session_state.role == "admin":
         play_sound(click_sound)
         delete_data(id_hapus)
         play_sound(success_sound)
-        time.sleep(0.7)
+        time.sleep(0.6)
         st.rerun()
 
-# ===============================
+# =========================================
 # INTERACTIVE CHART
-# ===============================
-st.subheader("📊 Ultimate Interactive Chart")
+# =========================================
+st.subheader("📊 GOD MODE INTERACTIVE CHART")
 
 fig = px.bar(
     df,
@@ -245,9 +244,9 @@ fig = px.bar(
 
 st.plotly_chart(fig, use_container_width=True)
 
-# ===============================
+# =========================================
 # LOGOUT
-# ===============================
+# =========================================
 if st.button("Logout"):
     play_sound(click_sound)
     st.session_state.login = False
