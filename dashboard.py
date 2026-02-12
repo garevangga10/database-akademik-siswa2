@@ -226,6 +226,3 @@ st.plotly_chart(fig, use_container_width=True)
 st.caption("Auto refresh setiap 30 detik")
 time.sleep(30)
 st.rerun()
-
-
- saya makemkode yg ini
